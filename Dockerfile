@@ -1,7 +1,7 @@
 # Multi-arch image: linux/amd64 + linux/arm/v7
 # Build with: docker buildx build --platform linux/amd64,linux/arm/v7 -t caddy-gui .
 
-FROM python:3.11-alpine
+FROM python:3.14-alpine
 
 # Non-root user for reduced attack surface
 RUN addgroup -S appuser && adduser -S -G appuser appuser
