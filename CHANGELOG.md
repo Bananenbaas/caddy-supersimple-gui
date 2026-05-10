@@ -69,3 +69,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `Dockerfile`: switched base image from `python:3.11-slim` to `python:3.11-alpine` for a smaller image footprint
 - `Dockerfile`: updated non-root user creation to use Alpine-compatible commands (`addgroup -S` / `adduser -S -G`) instead of Debian/Ubuntu commands (`groupadd -r` / `useradd -r -g`)
+
+---
+
+## [1.0.2] — 2026-05-10
+
+### Changed
+
+- `docker-compose.yml`: removed `build: .` — the compose file is now production-only and pulls from the registry
+- `docker-compose.yml`: image reference changed to `ghcr.io/bananenbaas/caddy-supersimple-gui:latest`

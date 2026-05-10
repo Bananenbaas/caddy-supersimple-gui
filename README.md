@@ -110,11 +110,19 @@ When Caddy uses `local_certs`, it creates its own CA. To make browsers trust Cad
 
 ## Multi-arch build
 
+The production image is published to the GitHub Container Registry:
+
+```
+ghcr.io/bananenbaas/caddy-supersimple-gui:latest
+```
+
+`docker compose up -d` pulls it automatically. To build and push a new image yourself:
+
 ```bash
 docker buildx create --use
 docker buildx build \
   --platform linux/amd64,linux/arm/v7 \
-  -t yourrepo/caddy-gui:latest \
+  -t ghcr.io/bananenbaas/caddy-supersimple-gui:latest \
   --push .
 ```
 
