@@ -28,6 +28,7 @@ pip-log.txt
 .dockerignore
 
 # IDE / editors
+*.code-workspace
 .vscode/
 .idea/
 *.swp
