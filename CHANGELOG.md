@@ -78,3 +78,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `docker-compose.yml`: removed `build: .` — the compose file is now production-only and pulls from the registry
 - `docker-compose.yml`: image reference changed to `ghcr.io/bananenbaas/caddy-supersimple-gui:latest`
+
+---
+
+## [1.0.3] — 2026-05-10
+
+### Added
+
+- **Search input** in the services table toolbar — live client-side filtering by domain name as you type
+- **Type filter dropdown** — filter table to All / Proxy / HTTPS Proxy / Redirect
+- **Sortable column headers** — click Domain or Type to sort ascending; click again to sort descending; active sort column highlighted in the primary colour with a ↑/↓ indicator
+- **Service count label** — shows "{visible} of {total} services" in the toolbar, updates live with filters
+- `no_results` i18n key — distinct message when services exist but all are filtered out
+- `filter_search_placeholder`, `filter_type_all`, `filter_count` i18n keys added to en/nl/de JSON files
+- `t()` function now supports `{0}`, `{1}` … placeholder substitution
+- `data-i18n-placeholder` attribute support in `applyTranslations()` for translated input placeholders

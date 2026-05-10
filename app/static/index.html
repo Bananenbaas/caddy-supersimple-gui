@@ -157,6 +157,41 @@
 
     .btn-sm { padding: 5px 11px; font-size: .78rem; }
 
+    /* ── Filter / sort bar ─────────────────────────────────────────────────── */
+    .card-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .search-wrap { position: relative; }
+    .search-wrap .search-icon {
+      position: absolute; left: 9px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted); pointer-events: none;
+    }
+    #filter-search { padding-left: 32px; width: 210px; }
+    .filter-type-select { min-width: 130px; width: auto; }
+    .count-label {
+      font-size: .8rem; color: var(--text-muted); white-space: nowrap; padding: 4px 0;
+    }
+
+    /* Sortable column headers */
+    .table th.sortable {
+      cursor: pointer; user-select: none;
+      transition: background var(--transition), color var(--transition);
+    }
+    .table th.sortable:hover { background: var(--surface-3); color: var(--text); }
+    .sort-icon {
+      display: inline-block; margin-left: 5px;
+      font-size: .72rem; opacity: .3;
+      transition: opacity var(--transition);
+    }
+    .table th.sort-active { color: var(--primary); }
+    .table th.sort-active .sort-icon { opacity: 1; color: var(--primary); }
+
     /* ── Main layout ───────────────────────────────────────────────────────── */
     .main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
 
@@ -424,6 +459,7 @@
       .table td:nth-child(3) { display: none; }
       .header { padding: 0 14px; }
       .toast { right: 12px; left: 12px; max-width: none; }
+      #filter-search { width: 140px; }
     }
     @media (max-width: 480px) {
       .table th:nth-child(2),
@@ -481,11 +517,26 @@
   </div>
 
   <div class="card">
+    <div class="card-toolbar">
+      <div class="filter-group">
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="filter-search" class="form-control" data-i18n-placeholder="filter_search_placeholder" placeholder="Search by domain…" autocomplete="off" spellcheck="false" />
+        </div>
+        <select id="filter-type" class="form-control filter-type-select">
+          <option value=""            data-i18n="filter_type_all">All types</option>
+          <option value="proxy"       data-i18n="type_proxy">Proxy</option>
+          <option value="https_proxy" data-i18n="type_https_proxy">HTTPS Proxy</option>
+          <option value="redirect"    data-i18n="type_redirect">Redirect</option>
+        </select>
+      </div>
+      <span id="service-count" class="count-label"></span>
+    </div>
     <table class="table" id="services-table">
       <thead>
         <tr>
-          <th data-i18n="domain">Domain</th>
-          <th data-i18n="type">Type</th>
+          <th class="sortable" data-sort="domain"><span data-i18n="domain">Domain</span><span class="sort-icon">↕</span></th>
+          <th class="sortable" data-sort="type"><span data-i18n="type">Type</span><span class="sort-icon">↕</span></th>
           <th data-i18n="backend">Backend / Target</th>
           <th data-i18n="actions">Actions</th>
         </tr>
@@ -494,7 +545,7 @@
     </table>
     <div id="empty-state" class="empty-state hidden">
       <div class="empty-state-icon">🌐</div>
-      <p data-i18n="no_services">No services configured yet.</p>
+      <p id="empty-state-msg" data-i18n="no_services">No services configured yet.</p>
     </div>
   </div>
 
@@ -583,12 +634,16 @@ const state = {
   pendingDelete: null,
 };
 
+const filter = { search: '', type: '', sortCol: null, sortDir: 'asc' };
+
 // ── i18n ───────────────────────────────────────────────────────────────────
 let TR = {};
 const SUPPORTED_LANGS = ['en', 'nl', 'de'];
 
-function t(key) {
-  return TR[key] !== undefined ? TR[key] : key;
+function t(key, ...args) {
+  let text = TR[key] !== undefined ? TR[key] : key;
+  args.forEach((arg, i) => { text = text.replace(new RegExp(`\\{${i}\\}`, 'g'), String(arg)); });
+  return text;
 }
 
 async function loadLang(lang) {
@@ -621,6 +676,9 @@ function applyTranslations() {
   });
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
   });
   // Re-render table to pick up translated badges etc.
   renderServices();
@@ -662,6 +720,44 @@ function esc(str) {
 }
 function escAttr(str) { return esc(str); }
 
+// ── Filter / sort helpers ──────────────────────────────────────────────────
+function getFilteredSorted() {
+  let list = [...state.services];
+  if (filter.search) {
+    const q = filter.search.toLowerCase();
+    list = list.filter(s => s.domain.toLowerCase().includes(q));
+  }
+  if (filter.type) {
+    list = list.filter(s => s.type === filter.type);
+  }
+  if (filter.sortCol) {
+    const col = filter.sortCol;
+    list.sort((a, b) => {
+      const av = (a[col] || '').toLowerCase();
+      const bv = (b[col] || '').toLowerCase();
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return filter.sortDir === 'asc' ? cmp : -cmp;
+    });
+  }
+  return list;
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    const col    = th.getAttribute('data-sort');
+    const icon   = th.querySelector('.sort-icon');
+    const active = filter.sortCol === col;
+    th.classList.toggle('sort-active', active);
+    if (icon) icon.textContent = !active ? '↕' : filter.sortDir === 'asc' ? '↑' : '↓';
+  });
+}
+
+function updateCount() {
+  const el = document.getElementById('service-count');
+  if (!el) return;
+  el.textContent = t('filter_count', getFilteredSorted().length, state.services.length);
+}
+
 // ── Render ─────────────────────────────────────────────────────────────────
 function badgeClass(type) {
   return { proxy: 'badge-proxy', https_proxy: 'badge-https-proxy', redirect: 'badge-redirect' }[type] || 'badge-proxy';
@@ -672,14 +768,21 @@ function renderServices() {
   const empty  = document.getElementById('empty-state');
   if (!tbody) return;
 
-  if (state.services.length === 0) {
+  updateSortHeaders();
+  updateCount();
+
+  const list = getFilteredSorted();
+
+  if (list.length === 0) {
     tbody.innerHTML = '';
     empty.classList.remove('hidden');
+    const msg = document.getElementById('empty-state-msg');
+    if (msg) msg.textContent = state.services.length === 0 ? t('no_services') : t('no_results');
     return;
   }
   empty.classList.add('hidden');
 
-  tbody.innerHTML = state.services.map(svc => {
+  tbody.innerHTML = list.map(svc => {
     const isSelf = state.selfHostname && svc.domain === state.selfHostname;
     const selfChip = isSelf
       ? `<span class="self-chip" title="${esc(t('self_badge_tooltip'))}">★ ${esc(t('self_badge'))}</span>`
@@ -994,6 +1097,28 @@ async function init() {
     state.pendingDelete = null;
   });
   document.getElementById('confirm-ok').addEventListener('click', confirmDelete);
+
+  // Filter and sort
+  document.getElementById('filter-search').addEventListener('input', e => {
+    filter.search = e.target.value;
+    renderServices();
+  });
+  document.getElementById('filter-type').addEventListener('change', e => {
+    filter.type = e.target.value;
+    renderServices();
+  });
+  document.querySelector('#services-table thead').addEventListener('click', e => {
+    const th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    const col = th.getAttribute('data-sort');
+    if (filter.sortCol === col) {
+      filter.sortDir = filter.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      filter.sortCol = col;
+      filter.sortDir = 'asc';
+    }
+    renderServices();
+  });
 
   // Keyboard: Escape closes modals
   document.addEventListener('keydown', e => {
