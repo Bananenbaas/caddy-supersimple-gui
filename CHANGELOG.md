@@ -51,7 +51,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `app/static/i18n/de.json` — German
 
 **DevOps / Docker**
-- `Dockerfile`: `python:3.11-slim` multi-arch base, installs dependencies, runs as non-root (`appuser`) by default
+- `Dockerfile`: `python:3.11-alpine` multi-arch base, installs dependencies, runs as non-root (`appuser`) by default
 - `docker-compose.yml`: external Docker network reference, Docker socket mount, Caddyfile and data volume mounts, all config via env vars
 - `.env.example`: documented reference for all environment variables
 - `.gitignore`: Python, Docker, IDE, and Caddy runtime exclusions
@@ -60,3 +60,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `README.md`: vibe-coding notice, feature list, quick-start guide, env var table, multi-arch build instructions, language extension guide, security note
 - `CLAUDE.md`: architecture reference, file map, API contract, env vars, frontend conventions, reload flow, known limitations
 - `CHANGELOG.md`: this file
+
+---
+
+## [1.0.1] — 2026-05-10
+
+### Changed
+
+- `Dockerfile`: switched base image from `python:3.11-slim` to `python:3.11-alpine` for a smaller image footprint
+- `Dockerfile`: updated non-root user creation to use Alpine-compatible commands (`addgroup -S` / `adduser -S -G`) instead of Debian/Ubuntu commands (`groupadd -r` / `useradd -r -g`)

@@ -22,7 +22,7 @@ A minimal, self-hosted web UI for managing a Caddyfile. No authentication — de
 - **Root CA download**: download Caddy's local CA certificate to install on client devices
 - **Multilingual**: English, Dutch, German (add more by dropping a JSON file)
 - **Dark / Light mode**: CSS-variable theming, persisted in `localStorage`
-- **Multi-arch Docker image**: `linux/amd64` + `linux/arm/v7`
+- **Multi-arch Docker image**: `linux/amd64` + `linux/arm/v7` — based on `python:3.11-alpine` for a minimal footprint
 
 ---
 
