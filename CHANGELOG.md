@@ -92,4 +92,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `no_results` i18n key — distinct message when services exist but all are filtered out
 - `filter_search_placeholder`, `filter_type_all`, `filter_count` i18n keys added to en/nl/de JSON files
 - `t()` function now supports `{0}`, `{1}` … placeholder substitution
+
+---
+
+## [1.0.4] — 2026-05-10
+
+### Fixed
+
+- **Type-switch bug in Edit modal**: switching between Proxy / HTTPS Proxy / Redirect now correctly updates the backend field value:
+  - → HTTPS Proxy: `https://` prefix is prepended automatically (strips any `http://` first)
+  - → Proxy: `https://` / `http://` prefix is stripped, leaving bare `IP:Port`
+  - → Redirect: `http://` is prepended if no protocol prefix is present; existing prefixes are kept
+
+### Added
+
+- **TLS Skip Verify indicator**: a green info strip appears below the backend field when type is HTTPS Proxy, confirming that `tls_insecure_skip_verify` will be written to the Caddyfile
+- `adaptBackendForType(val, newType)` helper function handles all prefix transformations
+- `tls_skip_verify_label` and `tls_auto_applied` i18n keys (EN / NL / DE)
+- Updated `backend_placeholder_https_proxy` to show `https://` prefix in placeholder
+- Updated `backend_hint_https_proxy` hint text to describe the automatic prefix behaviour
 - `data-i18n-placeholder` attribute support in `applyTranslations()` for translated input placeholders

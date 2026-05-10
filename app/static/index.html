@@ -396,6 +396,28 @@
       line-height: 1.5;
     }
 
+    /* ── TLS indicator ─────────────────────────────────────────────────────── */
+    .tls-indicator {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: color-mix(in srgb, var(--success) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--success) 28%, transparent);
+      border-radius: var(--radius-sm);
+      font-size: .82rem;
+      color: var(--text);
+    }
+    .tls-indicator svg { color: var(--success); flex-shrink: 0; }
+    .tls-auto-tag {
+      margin-left: auto;
+      padding: 1px 8px;
+      background: color-mix(in srgb, var(--success) 15%, transparent);
+      color: var(--success);
+      border-radius: 20px;
+      font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+
     /* ── Toast ─────────────────────────────────────────────────────────────── */
     .toast {
       position: fixed;
@@ -587,6 +609,11 @@
         <input type="text" id="field-backend" class="form-control" autocomplete="off" spellcheck="false" />
         <span class="field-hint" id="backend-hint"></span>
         <span class="field-error" id="backend-error"></span>
+        <div id="tls-indicator" class="tls-indicator hidden">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span data-i18n="tls_skip_verify_label">TLS Skip Verify (tls_insecure_skip_verify)</span>
+          <span class="tls-auto-tag" data-i18n="tls_auto_applied">auto</span>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -831,6 +858,22 @@ async function loadServices() {
 function showModal(id)  { document.getElementById(id).classList.remove('hidden'); document.body.style.overflow='hidden'; }
 function hideModal(id)  { document.getElementById(id).classList.add('hidden');    document.body.style.overflow=''; }
 
+function adaptBackendForType(val, newType) {
+  val = val.trim();
+  if (!val) return val;
+  let bare = val;
+  if (bare.startsWith('https://')) bare = bare.slice(8);
+  else if (bare.startsWith('http://')) bare = bare.slice(7);
+  switch (newType) {
+    case 'proxy':       return bare;
+    case 'https_proxy': return 'https://' + bare;
+    case 'redirect':
+      if (val.startsWith('http://') || val.startsWith('https://')) return val;
+      return 'http://' + bare;
+    default: return val;
+  }
+}
+
 function updateBackendHint() {
   const type  = document.getElementById('field-type')?.value || 'proxy';
   const label = document.getElementById('backend-label');
@@ -843,6 +886,8 @@ function updateBackendHint() {
   if (label) label.textContent = t(labels[type] || 'backend');
   hint.textContent = t(hints[type] || '');
   if (input) input.placeholder = t(phs[type] || '');
+  const tls = document.getElementById('tls-indicator');
+  if (tls) tls.classList.toggle('hidden', type !== 'https_proxy');
 }
 
 function clearErrors() {
@@ -1075,7 +1120,11 @@ async function init() {
   document.getElementById('modal-close').addEventListener('click',  closeServiceModal);
   document.getElementById('modal-cancel').addEventListener('click', closeServiceModal);
   document.getElementById('modal-save').addEventListener('click',   saveService);
-  document.getElementById('field-type').addEventListener('change',  updateBackendHint);
+  document.getElementById('field-type').addEventListener('change', e => {
+    const backendField = document.getElementById('field-backend');
+    if (backendField) backendField.value = adaptBackendForType(backendField.value, e.target.value);
+    updateBackendHint();
+  });
 
   // Save on Enter in text inputs
   ['field-domain', 'field-backend'].forEach(id => {
