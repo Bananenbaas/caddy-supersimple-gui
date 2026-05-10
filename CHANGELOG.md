@@ -111,4 +111,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - `tls_skip_verify_label` and `tls_auto_applied` i18n keys (EN / NL / DE)
 - Updated `backend_placeholder_https_proxy` to show `https://` prefix in placeholder
 - Updated `backend_hint_https_proxy` hint text to describe the automatic prefix behaviour
+
+---
+
+## [1.0.5] — 2026-05-10
+
+### Added
+
+- **Export Bookmarks** button in the toolbar (next to Download Root CA): generates and downloads `caddy-bookmarks.html` in Netscape Bookmark File Format
+  - Root folder: "Caddy Services"
+  - One sub-folder per service named after the full domain
+  - Each folder contains one bookmark: `https://<domain>`
+  - Generated entirely client-side in JavaScript from the current services list — no backend call
+- `export_bookmarks` i18n key added to EN / NL / DE translation files
 - `data-i18n-placeholder` attribute support in `applyTranslations()` for translated input placeholders

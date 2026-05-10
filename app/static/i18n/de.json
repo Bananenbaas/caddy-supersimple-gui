@@ -5,6 +5,7 @@
   "services_subtitle": "Reverse-Proxy-, HTTPS-Proxy- und Weiterleitungs-Einträge verwalten",
   "add_service": "Dienst hinzufügen",
   "download_cert": "Root-CA herunterladen",
+  "export_bookmarks": "Lesezeichen exportieren",
   "download_cert_help": "Installieren Sie dieses Zertifikat einmalig auf Ihren Geräten, um allen Caddy-HTTPS-Seiten im lokalen Netzwerk zu vertrauen.",
   "domain": "Domain",
   "type": "Typ",

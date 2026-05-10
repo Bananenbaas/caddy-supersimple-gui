@@ -5,6 +5,7 @@
   "services_subtitle": "Beheer je reverse proxy, HTTPS proxy en redirect entries",
   "add_service": "Service toevoegen",
   "download_cert": "Root CA downloaden",
+  "export_bookmarks": "Bladwijzers exporteren",
   "download_cert_help": "Installeer dit certificaat eenmalig op je apparaten om alle Caddy HTTPS-sites op je lokale netwerk te vertrouwen.",
   "domain": "Domein",
   "type": "Type",

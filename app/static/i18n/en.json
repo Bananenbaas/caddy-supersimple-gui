@@ -5,6 +5,7 @@
   "services_subtitle": "Manage your reverse proxy, HTTPS proxy, and redirect entries",
   "add_service": "Add Service",
   "download_cert": "Download Root CA",
+  "export_bookmarks": "Export Bookmarks",
   "download_cert_help": "Install this certificate once on your devices to trust all Caddy-managed HTTPS sites on your local network.",
   "domain": "Domain",
   "type": "Type",
