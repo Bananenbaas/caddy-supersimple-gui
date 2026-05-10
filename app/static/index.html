@@ -1,0 +1,1012 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Caddy GUI</title>
+  <style>
+    /* ── Design tokens ─────────────────────────────────────────────────────── */
+    :root {
+      --bg:           #0e1117;
+      --surface:      #1a1e2e;
+      --surface-2:    #222740;
+      --surface-3:    #2a2f50;
+      --border:       #323660;
+      --border-light: #424880;
+      --text:         #e2e4f3;
+      --text-muted:   #7a80a8;
+      --text-dim:     #555b7a;
+      --primary:      #6c7fff;
+      --primary-dark: #5566ee;
+      --success:      #4ade80;
+      --success-bg:   #14532d55;
+      --danger:       #f87171;
+      --danger-bg:    #7f1d1d55;
+      --warning:      #fbbf24;
+      --warning-bg:   #78350f33;
+      --radius-sm:    6px;
+      --radius-md:    10px;
+      --radius-lg:    14px;
+      --shadow:       0 4px 24px rgba(0,0,0,.45);
+      --shadow-sm:    0 2px 8px  rgba(0,0,0,.3);
+      --transition:   .18s ease;
+      /* badge colours */
+      --badge-proxy-bg:        #1e3a5f;
+      --badge-proxy-text:      #60a5fa;
+      --badge-https-bg:        #3b1f5f;
+      --badge-https-text:      #c084fc;
+      --badge-redirect-bg:     #3f2a0f;
+      --badge-redirect-text:   #fb923c;
+    }
+    [data-theme="light"] {
+      --bg:           #f0f2f7;
+      --surface:      #ffffff;
+      --surface-2:    #f7f8fc;
+      --surface-3:    #eef0f8;
+      --border:       #d8dce8;
+      --border-light: #c0c6dc;
+      --text:         #1a1d2e;
+      --text-muted:   #5a6082;
+      --text-dim:     #9098b8;
+      --primary:      #5566ee;
+      --primary-dark: #4455cc;
+      --success:      #16a34a;
+      --success-bg:   #dcfce7;
+      --danger:       #dc2626;
+      --danger-bg:    #fee2e2;
+      --warning:      #d97706;
+      --warning-bg:   #fef3c7;
+      --shadow:       0 4px 24px rgba(0,0,0,.10);
+      --shadow-sm:    0 2px 8px  rgba(0,0,0,.06);
+      --badge-proxy-bg:        #dbeafe;
+      --badge-proxy-text:      #1d4ed8;
+      --badge-https-bg:        #f3e8ff;
+      --badge-https-text:      #7e22ce;
+      --badge-redirect-bg:     #fff7ed;
+      --badge-redirect-text:   #c2410c;
+    }
+
+    /* ── Reset ─────────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      transition: background var(--transition), color var(--transition);
+    }
+
+    /* ── Header ────────────────────────────────────────────────────────────── */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+    .header-left { display: flex; align-items: center; gap: 10px; }
+    .logo-icon {
+      width: 34px; height: 34px;
+      background: var(--primary);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .logo-icon svg { width: 20px; height: 20px; color: #fff; }
+    .logo-title { font-size: 1.1rem; font-weight: 700; letter-spacing: -.3px; }
+    .logo-sub   { font-size: .72rem; color: var(--text-muted); margin-top: 1px; }
+
+    .header-right { display: flex; align-items: center; gap: 8px; }
+
+    .lang-select {
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 5px 10px;
+      font-size: .82rem;
+      cursor: pointer;
+      transition: border-color var(--transition);
+    }
+    .lang-select:hover { border-color: var(--primary); }
+    .lang-select:focus { outline: none; border-color: var(--primary); }
+
+    /* ── Buttons ───────────────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px;
+      font-size: .84rem; font-weight: 500;
+      border: none; border-radius: var(--radius-sm);
+      cursor: pointer; transition: all var(--transition);
+      text-decoration: none; white-space: nowrap;
+      line-height: 1.4;
+    }
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+    .btn svg { flex-shrink: 0; }
+
+    .btn-primary   { background: var(--primary);     color: #fff; }
+    .btn-primary:hover:not(:disabled)   { background: var(--primary-dark); }
+
+    .btn-success   { background: #166534; color: var(--success); border: 1px solid #14532d; }
+    .btn-success:hover:not(:disabled)   { background: #14532d; }
+    [data-theme="light"] .btn-success   { background: #dcfce7; color: #15803d; border-color: #86efac; }
+    [data-theme="light"] .btn-success:hover:not(:disabled) { background: #bbf7d0; }
+
+    .btn-danger    { background: #7f1d1d; color: var(--danger); border: 1px solid #991b1b; }
+    .btn-danger:hover:not(:disabled)    { background: #991b1b; }
+    [data-theme="light"] .btn-danger    { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+    [data-theme="light"] .btn-danger:hover:not(:disabled)  { background: #fecaca; }
+
+    .btn-secondary { background: var(--surface-2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover:not(:disabled) { background: var(--surface-3); border-color: var(--border-light); }
+
+    .btn-icon {
+      padding: 7px;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+    }
+    .btn-icon:hover { background: var(--surface-3); color: var(--text); border-color: var(--border-light); }
+
+    .btn-sm { padding: 5px 11px; font-size: .78rem; }
+
+    /* ── Main layout ───────────────────────────────────────────────────────── */
+    .main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
+
+    .page-header {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      flex-wrap: wrap; gap: 16px; margin-bottom: 24px;
+    }
+    .page-header h2 { font-size: 1.4rem; font-weight: 700; }
+    .page-header .subtitle { color: var(--text-muted); font-size: .85rem; margin-top: 4px; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ── Card ──────────────────────────────────────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* ── Table ─────────────────────────────────────────────────────────────── */
+    .table { width: 100%; border-collapse: collapse; }
+    .table th {
+      padding: 13px 16px;
+      text-align: left;
+      font-size: .75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .table td {
+      padding: 14px 16px;
+      font-size: .87rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .table tbody tr:last-child td { border-bottom: none; }
+    .table tbody tr {
+      transition: background var(--transition);
+    }
+    .table tbody tr:hover { background: var(--surface-2); }
+    .self-row { background: color-mix(in srgb, var(--primary) 6%, transparent); }
+    .self-row:hover { background: color-mix(in srgb, var(--primary) 10%, transparent); }
+
+    .domain-cell { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .domain-name { font-weight: 500; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: .85rem; }
+
+    code.backend-val {
+      font-family: 'JetBrains Mono', 'Fira Code', monospace;
+      font-size: .82rem;
+      color: var(--text-muted);
+      background: var(--surface-2);
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .actions-cell { display: flex; gap: 6px; }
+
+    /* ── Badges ────────────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 20px;
+      font-size: .72rem;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .badge-proxy        { background: var(--badge-proxy-bg);   color: var(--badge-proxy-text); }
+    .badge-https-proxy  { background: var(--badge-https-bg);   color: var(--badge-https-text); }
+    .badge-redirect     { background: var(--badge-redirect-bg);color: var(--badge-redirect-text); }
+
+    .self-chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px;
+      background: color-mix(in srgb, var(--primary) 18%, transparent);
+      color: var(--primary);
+      border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent);
+      border-radius: 20px;
+      font-size: .68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    /* ── Empty state ───────────────────────────────────────────────────────── */
+    .empty-state {
+      padding: 60px 20px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .empty-state-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: .5; }
+    .empty-state p { font-size: .9rem; max-width: 380px; margin: 0 auto; }
+
+    /* ── Cert info box ─────────────────────────────────────────────────────── */
+    .info-card {
+      margin-top: 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 18px 20px;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      font-size: .84rem;
+    }
+    .info-card-icon { font-size: 1.4rem; flex-shrink: 0; margin-top: 2px; }
+    .info-card h3 { font-size: .9rem; font-weight: 600; margin-bottom: 4px; }
+    .info-card p  { color: var(--text-muted); line-height: 1.55; }
+
+    /* ── Modal overlay ─────────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+      padding: 20px;
+      animation: fade-in .15s ease;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow);
+      width: 100%; max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: slide-up .18s ease;
+    }
+    .modal-sm { max-width: 420px; }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .modal-header h3 { font-size: 1rem; font-weight: 600; }
+    .modal-body  { padding: 20px; }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 14px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface-2);
+      border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    }
+
+    /* ── Form ──────────────────────────────────────────────────────────────── */
+    .form-group { margin-bottom: 16px; }
+    .form-group:last-child { margin-bottom: 0; }
+    label {
+      display: block;
+      font-size: .8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .form-control {
+      width: 100%;
+      background: var(--surface-2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 9px 12px;
+      font-size: .9rem;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+    }
+    .form-control.error { border-color: var(--danger); }
+    .field-hint {
+      display: block;
+      font-size: .75rem;
+      color: var(--text-muted);
+      margin-top: 5px;
+      line-height: 1.4;
+    }
+    .field-error {
+      display: none;
+      font-size: .76rem;
+      color: var(--danger);
+      margin-top: 4px;
+    }
+    .field-error.visible { display: block; }
+
+    /* ── Warning box ───────────────────────────────────────────────────────── */
+    .warning-box {
+      background: var(--warning-bg);
+      border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: .84rem;
+      color: var(--warning);
+      margin-bottom: 16px;
+      line-height: 1.5;
+    }
+
+    /* ── Toast ─────────────────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      padding: 12px 18px;
+      border-radius: var(--radius-md);
+      font-size: .87rem;
+      font-weight: 500;
+      max-width: 380px;
+      z-index: 200;
+      box-shadow: var(--shadow);
+      animation: slide-up .2s ease;
+      transition: opacity .3s ease;
+    }
+    .toast-success { background: var(--success-bg); color: var(--success); border: 1px solid color-mix(in srgb, var(--success) 35%, transparent); }
+    .toast-error   { background: var(--danger-bg);  color: var(--danger);  border: 1px solid color-mix(in srgb, var(--danger)  35%, transparent); }
+    .toast-info    { background: var(--surface-3);  color: var(--text);    border: 1px solid var(--border); }
+
+    /* ── Redirect overlay ──────────────────────────────────────────────────── */
+    .redirect-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.82);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 300;
+    }
+    .redirect-dialog {
+      background: var(--surface);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      text-align: center;
+      max-width: 440px;
+      box-shadow: var(--shadow);
+      animation: slide-up .2s ease;
+    }
+    .redirect-icon  { font-size: 2.8rem; margin-bottom: 16px; }
+    .redirect-dialog h3 { font-size: 1.2rem; margin-bottom: 10px; }
+    .redirect-dialog p  { color: var(--text-muted); font-size: .9rem; margin-bottom: 20px; line-height: 1.5; }
+    .redirect-count-ring {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      border: 3px solid var(--primary);
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    /* ── Utility ───────────────────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ── Animations ────────────────────────────────────────────────────────── */
+    @keyframes fade-in  { from { opacity:0 } to { opacity:1 } }
+    @keyframes slide-up { from { transform: translateY(16px); opacity:0 } to { transform: translateY(0); opacity:1 } }
+
+    /* ── Responsive ────────────────────────────────────────────────────────── */
+    @media (max-width: 700px) {
+      .main { padding: 16px 12px 40px; }
+      .page-header { flex-direction: column; }
+      .table th:nth-child(3),
+      .table td:nth-child(3) { display: none; }
+      .header { padding: 0 14px; }
+      .toast { right: 12px; left: 12px; max-width: none; }
+    }
+    @media (max-width: 480px) {
+      .table th:nth-child(2),
+      .table td:nth-child(2) { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────────── -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-title" data-i18n="app_title">Caddy GUI</div>
+      <div class="logo-sub"  data-i18n="app_subtitle">Caddyfile Manager</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <select id="lang-select" class="lang-select" title="Language">
+      <option value="en">🇬🇧 EN</option>
+      <option value="nl">🇳🇱 NL</option>
+      <option value="de">🇩🇪 DE</option>
+    </select>
+    <button id="theme-toggle" class="btn btn-icon" data-i18n-title="theme_toggle">
+      <svg id="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="theme-icon-sun"  width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="hidden"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+    </button>
+  </div>
+</header>
+
+<!-- ── Main ───────────────────────────────────────────────────────────────── -->
+<main class="main">
+  <div class="page-header">
+    <div>
+      <h2 data-i18n="services_title">Services</h2>
+      <p class="subtitle" data-i18n="services_subtitle">Manage your proxy and redirect entries</p>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-secondary" id="btn-download-cert">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="download_cert">Download Root CA</span>
+      </button>
+      <button class="btn btn-success" id="btn-add-service">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span data-i18n="add_service">Add Service</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card">
+    <table class="table" id="services-table">
+      <thead>
+        <tr>
+          <th data-i18n="domain">Domain</th>
+          <th data-i18n="type">Type</th>
+          <th data-i18n="backend">Backend / Target</th>
+          <th data-i18n="actions">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="services-tbody"></tbody>
+    </table>
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-state-icon">🌐</div>
+      <p data-i18n="no_services">No services configured yet.</p>
+    </div>
+  </div>
+
+  <div class="info-card" id="cert-info-card">
+    <div class="info-card-icon">🔐</div>
+    <div>
+      <h3 data-i18n="cert_section_title">Root CA Certificate</h3>
+      <p data-i18n="cert_info">Caddy generates a local Certificate Authority when using local_certs. Install the root certificate once on each client device.</p>
+    </div>
+  </div>
+</main>
+
+<!-- ── Service modal ──────────────────────────────────────────────────────── -->
+<div id="service-modal" class="modal-overlay hidden">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-header">
+      <h3 id="modal-title" data-i18n="add_service_title">Add Service</h3>
+      <button class="btn btn-icon" id="modal-close" aria-label="Close" style="padding:5px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="self-warning" class="warning-box hidden" data-i18n="self_hostname_warning"></div>
+      <div class="form-group">
+        <label for="field-domain" data-i18n="domain">Domain</label>
+        <input type="text" id="field-domain" class="form-control" placeholder="service.example.local" autocomplete="off" spellcheck="false" />
+        <span class="field-error" id="domain-error"></span>
+      </div>
+      <div class="form-group">
+        <label for="field-type" data-i18n="type">Type</label>
+        <select id="field-type" class="form-control">
+          <option value="proxy"       data-i18n="type_proxy">Proxy</option>
+          <option value="https_proxy" data-i18n="type_https_proxy">HTTPS Proxy</option>
+          <option value="redirect"    data-i18n="type_redirect">Redirect</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="field-backend" id="backend-label" data-i18n="backend_label_proxy">Backend (IP:Port)</label>
+        <input type="text" id="field-backend" class="form-control" autocomplete="off" spellcheck="false" />
+        <span class="field-hint" id="backend-hint"></span>
+        <span class="field-error" id="backend-error"></span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="modal-cancel" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-primary"   id="modal-save"   data-i18n="save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Delete confirmation ────────────────────────────────────────────────── -->
+<div id="confirm-modal" class="modal-overlay hidden">
+  <div class="modal modal-sm" role="dialog" aria-modal="true">
+    <div class="modal-header">
+      <h3 data-i18n="confirm_title">Confirm Delete</h3>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-message" style="line-height:1.6;font-size:.9rem"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="confirm-cancel" data-i18n="cancel">Cancel</button>
+      <button class="btn btn-danger"    id="confirm-ok"     data-i18n="delete">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Redirect countdown ─────────────────────────────────────────────────── -->
+<div id="redirect-overlay" class="redirect-overlay hidden">
+  <div class="redirect-dialog">
+    <div class="redirect-icon">🔄</div>
+    <h3 data-i18n="redirecting_title">Hostname Changed</h3>
+    <p id="redirect-msg"></p>
+    <div class="redirect-count-ring" id="redirect-count">5</div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────────────────── -->
+<div id="toast" class="toast hidden" role="alert" aria-live="polite"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const state = {
+  services: [],
+  selfHostname: '',
+  editingDomain: null,  // null = add mode, string = edit mode
+  pendingDelete: null,
+};
+
+// ── i18n ───────────────────────────────────────────────────────────────────
+let TR = {};
+const SUPPORTED_LANGS = ['en', 'nl', 'de'];
+
+function t(key) {
+  return TR[key] !== undefined ? TR[key] : key;
+}
+
+async function loadLang(lang) {
+  if (!SUPPORTED_LANGS.includes(lang)) lang = 'en';
+  try {
+    const r = await fetch(`/static/i18n/${lang}.json`);
+    const data = await r.json();
+    // Merge with English fallback
+    if (lang !== 'en') {
+      const enR = await fetch('/static/i18n/en.json');
+      const enData = await enR.json();
+      TR = { ...enData, ...data };
+    } else {
+      TR = data;
+    }
+  } catch {
+    // Fallback: keep whatever we have
+  }
+  localStorage.setItem('lang', lang);
+  applyTranslations();
+  updateBackendHint();
+}
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const text = t(key);
+    if (el.tagName === 'OPTION') { el.textContent = text; return; }
+    el.textContent = text;
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  // Re-render table to pick up translated badges etc.
+  renderServices();
+}
+
+// ── Theme ──────────────────────────────────────────────────────────────────
+function setTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('theme', theme);
+  document.getElementById('theme-icon-moon').classList.toggle('hidden', theme === 'light');
+  document.getElementById('theme-icon-sun').classList.toggle('hidden',  theme === 'dark');
+}
+
+// ── API ────────────────────────────────────────────────────────────────────
+const API = {
+  async _fetch(url, opts = {}) {
+    const r = await fetch(url, {
+      headers: { 'Content-Type': 'application/json' },
+      ...opts,
+    });
+    if (!r.ok) {
+      let detail = r.statusText;
+      try { detail = (await r.json()).detail || detail; } catch {}
+      throw new Error(detail);
+    }
+    return r.json();
+  },
+  getServices()           { return this._fetch('/api/services'); },
+  addService(entry)       { return this._fetch('/api/services', { method: 'POST', body: JSON.stringify(entry) }); },
+  updateService(dom, e)   { return this._fetch(`/api/services/${encodeURIComponent(dom)}`, { method: 'PUT', body: JSON.stringify(e) }); },
+  deleteService(dom)      { return this._fetch(`/api/services/${encodeURIComponent(dom)}`, { method: 'DELETE' }); },
+};
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+function esc(str) {
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function escAttr(str) { return esc(str); }
+
+// ── Render ─────────────────────────────────────────────────────────────────
+function badgeClass(type) {
+  return { proxy: 'badge-proxy', https_proxy: 'badge-https-proxy', redirect: 'badge-redirect' }[type] || 'badge-proxy';
+}
+
+function renderServices() {
+  const tbody  = document.getElementById('services-tbody');
+  const empty  = document.getElementById('empty-state');
+  if (!tbody) return;
+
+  if (state.services.length === 0) {
+    tbody.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+
+  tbody.innerHTML = state.services.map(svc => {
+    const isSelf = state.selfHostname && svc.domain === state.selfHostname;
+    const selfChip = isSelf
+      ? `<span class="self-chip" title="${esc(t('self_badge_tooltip'))}">★ ${esc(t('self_badge'))}</span>`
+      : '';
+    const typeLabel = t('type_' + svc.type) || svc.type;
+    const backendDisplay = svc.type === 'redirect'
+      ? svc.backend + '{uri}'
+      : svc.backend;
+    return `
+      <tr class="${isSelf ? 'self-row' : ''}">
+        <td>
+          <div class="domain-cell">
+            <span class="domain-name">${esc(svc.domain)}</span>
+            ${selfChip}
+          </div>
+        </td>
+        <td><span class="badge ${badgeClass(svc.type)}">${esc(typeLabel)}</span></td>
+        <td><code class="backend-val">${esc(backendDisplay)}</code></td>
+        <td class="actions-cell">
+          <button class="btn btn-sm btn-secondary" data-action="edit"   data-domain="${escAttr(svc.domain)}" title="${esc(t('edit'))}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            ${esc(t('edit'))}
+          </button>
+          <button class="btn btn-sm btn-danger" data-action="delete" data-domain="${escAttr(svc.domain)}" title="${esc(t('delete'))}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            ${esc(t('delete'))}
+          </button>
+        </td>
+      </tr>`;
+  }).join('');
+}
+
+// ── Load services ──────────────────────────────────────────────────────────
+async function loadServices() {
+  try {
+    const data = await API.getServices();
+    state.services    = data.services    || [];
+    state.selfHostname = data.self_hostname || '';
+    renderServices();
+  } catch (err) {
+    showToast(t('error_loading') + ': ' + err.message, 'error');
+  }
+}
+
+// ── Modal ──────────────────────────────────────────────────────────────────
+function showModal(id)  { document.getElementById(id).classList.remove('hidden'); document.body.style.overflow='hidden'; }
+function hideModal(id)  { document.getElementById(id).classList.add('hidden');    document.body.style.overflow=''; }
+
+function updateBackendHint() {
+  const type  = document.getElementById('field-type')?.value || 'proxy';
+  const label = document.getElementById('backend-label');
+  const hint  = document.getElementById('backend-hint');
+  const input = document.getElementById('field-backend');
+  if (!hint) return;
+  const labels = { proxy: 'backend_label_proxy', https_proxy: 'backend_label_https_proxy', redirect: 'backend_label_redirect' };
+  const hints  = { proxy: 'backend_hint_proxy',  https_proxy: 'backend_hint_https_proxy',  redirect: 'backend_hint_redirect'  };
+  const phs    = { proxy: 'backend_placeholder_proxy', https_proxy: 'backend_placeholder_https_proxy', redirect: 'backend_placeholder_redirect' };
+  if (label) label.textContent = t(labels[type] || 'backend');
+  hint.textContent = t(hints[type] || '');
+  if (input) input.placeholder = t(phs[type] || '');
+}
+
+function clearErrors() {
+  document.querySelectorAll('.field-error').forEach(el => {
+    el.textContent = '';
+    el.classList.remove('visible');
+  });
+  document.getElementById('field-domain')?.classList.remove('error');
+  document.getElementById('field-backend')?.classList.remove('error');
+}
+
+function showFieldError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) { el.textContent = msg; el.classList.add('visible'); }
+}
+
+function openAddModal() {
+  state.editingDomain = null;
+  document.getElementById('modal-title').textContent = t('add_service_title');
+  document.getElementById('field-domain').value  = '';
+  document.getElementById('field-type').value    = 'proxy';
+  document.getElementById('field-backend').value = '';
+  document.getElementById('self-warning').classList.add('hidden');
+  clearErrors();
+  updateBackendHint();
+  showModal('service-modal');
+  setTimeout(() => document.getElementById('field-domain').focus(), 60);
+}
+
+function openEditModal(domain) {
+  const svc = state.services.find(s => s.domain === domain);
+  if (!svc) return;
+  state.editingDomain = domain;
+  document.getElementById('modal-title').textContent = t('edit_service_title');
+  document.getElementById('field-domain').value  = svc.domain;
+  document.getElementById('field-type').value    = svc.type;
+  document.getElementById('field-backend').value = svc.backend;
+
+  const warn = document.getElementById('self-warning');
+  if (state.selfHostname && domain === state.selfHostname) {
+    warn.textContent = t('self_hostname_warning');
+    warn.classList.remove('hidden');
+  } else {
+    warn.classList.add('hidden');
+  }
+
+  clearErrors();
+  updateBackendHint();
+  showModal('service-modal');
+  setTimeout(() => document.getElementById('field-domain').focus(), 60);
+}
+
+function closeServiceModal() {
+  hideModal('service-modal');
+  state.editingDomain = null;
+}
+
+// ── Validation ─────────────────────────────────────────────────────────────
+function validateForm(domain, backend) {
+  let ok = true;
+  clearErrors();
+
+  if (!domain) {
+    showFieldError('domain-error', t('error_domain_required'));
+    document.getElementById('field-domain').classList.add('error');
+    ok = false;
+  } else if (!/^[a-zA-Z0-9*][a-zA-Z0-9.\-*:]*$/.test(domain)) {
+    showFieldError('domain-error', t('error_invalid_domain'));
+    document.getElementById('field-domain').classList.add('error');
+    ok = false;
+  }
+
+  if (!backend) {
+    showFieldError('backend-error', t('error_backend_required'));
+    document.getElementById('field-backend').classList.add('error');
+    ok = false;
+  }
+
+  return ok;
+}
+
+// ── Save service ───────────────────────────────────────────────────────────
+async function saveService() {
+  const domain  = document.getElementById('field-domain').value.trim();
+  const type    = document.getElementById('field-type').value;
+  const backend = document.getElementById('field-backend').value.trim();
+
+  if (!validateForm(domain, backend)) return;
+
+  const entry = { domain, type, backend };
+  const isEditing       = state.editingDomain !== null;
+  const isSelfEdit      = isEditing && state.editingDomain === state.selfHostname && !!state.selfHostname;
+  const domainChanged   = isEditing && state.editingDomain !== domain;
+
+  const saveBtn = document.getElementById('modal-save');
+  saveBtn.disabled = true;
+  saveBtn.textContent = t('saving');
+
+  try {
+    if (isEditing) {
+      await API.updateService(state.editingDomain, entry);
+    } else {
+      await API.addService(entry);
+    }
+    closeServiceModal();
+    await loadServices();
+
+    if (isSelfEdit && domainChanged) {
+      startRedirectCountdown(domain);
+    } else {
+      showToast(isEditing ? t('success_updated') : t('success_added'), 'success');
+    }
+  } catch (err) {
+    showToast(err.message || t('error_generic'), 'error');
+  } finally {
+    saveBtn.disabled = false;
+    saveBtn.textContent = t('save');
+  }
+}
+
+// ── Delete ─────────────────────────────────────────────────────────────────
+function openDeleteConfirm(domain) {
+  state.pendingDelete = domain;
+  document.getElementById('confirm-message').innerHTML =
+    `${esc(t('confirm_delete'))} <strong>${esc(domain)}</strong>.<br><span style="color:var(--text-muted);font-size:.84rem">${esc(t('confirm_delete_suffix'))}</span>`;
+  showModal('confirm-modal');
+}
+
+async function confirmDelete() {
+  if (!state.pendingDelete) return;
+  const domain = state.pendingDelete;
+  const btn = document.getElementById('confirm-ok');
+  btn.disabled = true;
+  try {
+    await API.deleteService(domain);
+    hideModal('confirm-modal');
+    state.pendingDelete = null;
+    await loadServices();
+    showToast(t('success_deleted'), 'success');
+  } catch (err) {
+    showToast(err.message || t('error_generic'), 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// ── Redirect countdown ─────────────────────────────────────────────────────
+function startRedirectCountdown(newDomain) {
+  const newUrl = `${location.protocol}//${newDomain}`;
+  const overlay = document.getElementById('redirect-overlay');
+  document.getElementById('redirect-msg').textContent =
+    `${t('redirecting_message')} ${t('seconds')} — ${newUrl}`;
+  overlay.classList.remove('hidden');
+
+  let n = 5;
+  const el = document.getElementById('redirect-count');
+  const tick = () => {
+    el.textContent = n;
+    if (n <= 0) { location.href = newUrl; return; }
+    n--;
+    setTimeout(tick, 1000);
+  };
+  tick();
+}
+
+// ── CA cert download ───────────────────────────────────────────────────────
+async function downloadCert() {
+  try {
+    const r = await fetch('/api/cert/download');
+    if (!r.ok) {
+      let detail = t('error_cert_not_found');
+      try { detail = (await r.json()).detail || detail; } catch {}
+      showToast(detail, 'error');
+      return;
+    }
+    const blob = await r.blob();
+    const url  = URL.createObjectURL(blob);
+    const a    = Object.assign(document.createElement('a'), { href: url, download: 'caddy-root-ca.crt' });
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    showToast(t('error_cert_not_found'), 'error');
+  }
+}
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+let _toastTimer = null;
+function showToast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast toast-${type}`;
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.add('hidden'), 4500);
+}
+
+// ── Event delegation (table buttons) ─────────────────────────────────────
+document.getElementById('services-tbody').addEventListener('click', e => {
+  const btn = e.target.closest('button[data-action]');
+  if (!btn) return;
+  const action = btn.getAttribute('data-action');
+  const domain = btn.getAttribute('data-domain');
+  if (action === 'edit')   openEditModal(domain);
+  if (action === 'delete') openDeleteConfirm(domain);
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  // Theme
+  const theme = localStorage.getItem('theme') || 'dark';
+  setTheme(theme);
+
+  // Language
+  const lang = localStorage.getItem('lang') || 'en';
+  document.getElementById('lang-select').value = SUPPORTED_LANGS.includes(lang) ? lang : 'en';
+  await loadLang(lang);
+
+  // Wire up controls
+  document.getElementById('btn-add-service').addEventListener('click', openAddModal);
+  document.getElementById('btn-download-cert').addEventListener('click', downloadCert);
+
+  document.getElementById('theme-toggle').addEventListener('click', () => {
+    const cur = document.documentElement.getAttribute('data-theme');
+    setTheme(cur === 'dark' ? 'light' : 'dark');
+  });
+
+  document.getElementById('lang-select').addEventListener('change', e => loadLang(e.target.value));
+
+  document.getElementById('modal-close').addEventListener('click',  closeServiceModal);
+  document.getElementById('modal-cancel').addEventListener('click', closeServiceModal);
+  document.getElementById('modal-save').addEventListener('click',   saveService);
+  document.getElementById('field-type').addEventListener('change',  updateBackendHint);
+
+  // Save on Enter in text inputs
+  ['field-domain', 'field-backend'].forEach(id => {
+    document.getElementById(id)?.addEventListener('keydown', e => {
+      if (e.key === 'Enter') saveService();
+    });
+  });
+
+  // Close modals on backdrop click
+  document.getElementById('service-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('service-modal')) closeServiceModal();
+  });
+  document.getElementById('confirm-modal').addEventListener('click', e => {
+    if (e.target === document.getElementById('confirm-modal')) hideModal('confirm-modal');
+  });
+
+  document.getElementById('confirm-cancel').addEventListener('click', () => {
+    hideModal('confirm-modal');
+    state.pendingDelete = null;
+  });
+  document.getElementById('confirm-ok').addEventListener('click', confirmDelete);
+
+  // Keyboard: Escape closes modals
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      if (!document.getElementById('service-modal').classList.contains('hidden')) closeServiceModal();
+      if (!document.getElementById('confirm-modal').classList.contains('hidden'))  hideModal('confirm-modal');
+    }
+  });
+
+  await loadServices();
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

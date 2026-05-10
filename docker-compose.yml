@@ -1,0 +1,36 @@
+services:
+  caddy-gui:
+    build: .
+    image: caddy-supersimple-gui:latest
+    container_name: ${COMPOSE_PROJECT_NAME:-caddy-gui}
+    restart: unless-stopped
+    # Run as root so it can access the Docker socket.
+    # Remove this if you configure the socket group properly.
+    user: root
+    environment:
+      # Path to Caddyfile inside this container
+      - CADDYFILE_PATH=${CADDYFILE_PATH:-/caddyfile/Caddyfile}
+      # Name of the Caddy container (used for docker exec reload)
+      - CADDY_CONTAINER=${CADDY_CONTAINER:-caddy}
+      # Path to Caddyfile inside the Caddy container
+      - CADDY_CONFIG_PATH=${CADDY_CONFIG_PATH:-/etc/caddy/Caddyfile}
+      # Port the GUI listens on
+      - PORT=${PORT:-5000}
+      # Hostname of this GUI itself in the Caddyfile (optional)
+      - SELF_HOSTNAME=${SELF_HOSTNAME:-}
+      # Path to Caddy's root CA certificate (mounted read-only below)
+      - CADDY_CERT_PATH=${CADDY_CERT_PATH:-/caddydata/pki/authorities/local/root.crt}
+    volumes:
+      # Caddyfile directory — read/write so the GUI can edit it
+      - ${CADDYFILE_DIR:-./caddyfile}:/caddyfile
+      # Caddy data dir — read-only for certificate download
+      - ${CADDY_DATA_DIR:-./caddydata}:/caddydata:ro
+      # Docker socket for running caddy reload inside the Caddy container
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - caddy-network
+
+networks:
+  caddy-network:
+    external: true
+    name: ${CADDY_NETWORK:-caddy}
