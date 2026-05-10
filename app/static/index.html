@@ -1060,6 +1060,16 @@ function startRedirectCountdown(newDomain) {
 // ── Bookmark export ────────────────────────────────────────────────────────
 function exportBookmarks() {
   const ts = Math.floor(Date.now() / 1000);
+
+  // Group services by their domain suffix (last label after the final dot)
+  const groups = {};
+  for (const svc of state.services) {
+    const parts = svc.domain.split('.');
+    const suffix = parts[parts.length - 1];
+    if (!groups[suffix]) groups[suffix] = [];
+    groups[suffix].push(svc);
+  }
+
   const lines = [
     '<!DOCTYPE NETSCAPE-Bookmark-file-1>',
     '<!-- This is an automatically generated file. -->',
@@ -1071,11 +1081,13 @@ function exportBookmarks() {
     '    <DL><p>',
   ];
 
-  for (const svc of state.services) {
-    const url = `https://${svc.domain}`;
-    lines.push(`        <DT><H3 ADD_DATE="${ts}">${esc(svc.domain)}</H3>`);
+  for (const suffix of Object.keys(groups).sort()) {
+    lines.push(`        <DT><H3 ADD_DATE="${ts}">${esc(suffix)}</H3>`);
     lines.push('        <DL><p>');
-    lines.push(`            <DT><A HREF="${escAttr(url)}" ADD_DATE="${ts}">${esc(url)}</A>`);
+    for (const svc of groups[suffix]) {
+      const url = `https://${svc.domain}`;
+      lines.push(`            <DT><A HREF="${escAttr(url)}" ADD_DATE="${ts}">${esc(svc.domain)}</A>`);
+    }
     lines.push('        </DL><p>');
   }
 

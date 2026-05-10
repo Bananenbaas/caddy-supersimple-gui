@@ -124,4 +124,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
   - Each folder contains one bookmark: `https://<domain>`
   - Generated entirely client-side in JavaScript from the current services list — no backend call
 - `export_bookmarks` i18n key added to EN / NL / DE translation files
+
+---
+
+## [1.0.6] — 2026-05-10
+
+### Fixed
+
+- **Bookmark export structure**: subfolders are now grouped by domain suffix (e.g. all `.local` domains in a "local" folder, all `.internal` domains in an "internal" folder) instead of creating one folder per individual domain. Inside each suffix folder the bookmarks are a flat list — title = full domain, URL = `https://` + full domain. Suffix folders are sorted alphabetically.
 - `data-i18n-placeholder` attribute support in `applyTranslations()` for translated input placeholders
