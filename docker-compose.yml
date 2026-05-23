@@ -1,7 +1,6 @@
 services:
   caddy-gui:
-    build: .
-    image: caddy-supersimple-gui:latest
+    image: ghcr.io/bananenbaas/caddy-supersimple-gui:latest
     container_name: ${COMPOSE_PROJECT_NAME:-caddy-gui}
     restart: unless-stopped
     # Run as root so it can access the Docker socket.

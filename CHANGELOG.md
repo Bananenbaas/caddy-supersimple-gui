@@ -69,3 +69,67 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - `Dockerfile`: switched base image from `python:3.11-slim` to `python:3.11-alpine` for a smaller image footprint
 - `Dockerfile`: updated non-root user creation to use Alpine-compatible commands (`addgroup -S` / `adduser -S -G`) instead of Debian/Ubuntu commands (`groupadd -r` / `useradd -r -g`)
+
+---
+
+## [1.0.2] — 2026-05-10
+
+### Changed
+
+- `docker-compose.yml`: removed `build: .` — the compose file is now production-only and pulls from the registry
+- `docker-compose.yml`: image reference changed to `ghcr.io/bananenbaas/caddy-supersimple-gui:latest`
+
+---
+
+## [1.0.3] — 2026-05-10
+
+### Added
+
+- **Search input** in the services table toolbar — live client-side filtering by domain name as you type
+- **Type filter dropdown** — filter table to All / Proxy / HTTPS Proxy / Redirect
+- **Sortable column headers** — click Domain or Type to sort ascending; click again to sort descending; active sort column highlighted in the primary colour with a ↑/↓ indicator
+- **Service count label** — shows "{visible} of {total} services" in the toolbar, updates live with filters
+- `no_results` i18n key — distinct message when services exist but all are filtered out
+- `filter_search_placeholder`, `filter_type_all`, `filter_count` i18n keys added to en/nl/de JSON files
+- `t()` function now supports `{0}`, `{1}` … placeholder substitution
+
+---
+
+## [1.0.4] — 2026-05-10
+
+### Fixed
+
+- **Type-switch bug in Edit modal**: switching between Proxy / HTTPS Proxy / Redirect now correctly updates the backend field value:
+  - → HTTPS Proxy: `https://` prefix is prepended automatically (strips any `http://` first)
+  - → Proxy: `https://` / `http://` prefix is stripped, leaving bare `IP:Port`
+  - → Redirect: `http://` is prepended if no protocol prefix is present; existing prefixes are kept
+
+### Added
+
+- **TLS Skip Verify indicator**: a green info strip appears below the backend field when type is HTTPS Proxy, confirming that `tls_insecure_skip_verify` will be written to the Caddyfile
+- `adaptBackendForType(val, newType)` helper function handles all prefix transformations
+- `tls_skip_verify_label` and `tls_auto_applied` i18n keys (EN / NL / DE)
+- Updated `backend_placeholder_https_proxy` to show `https://` prefix in placeholder
+- Updated `backend_hint_https_proxy` hint text to describe the automatic prefix behaviour
+
+---
+
+## [1.0.5] — 2026-05-10
+
+### Added
+
+- **Export Bookmarks** button in the toolbar (next to Download Root CA): generates and downloads `caddy-bookmarks.html` in Netscape Bookmark File Format
+  - Root folder: "Caddy Services"
+  - One sub-folder per service named after the full domain
+  - Each folder contains one bookmark: `https://<domain>`
+  - Generated entirely client-side in JavaScript from the current services list — no backend call
+- `export_bookmarks` i18n key added to EN / NL / DE translation files
+
+---
+
+## [1.0.6] — 2026-05-10
+
+### Fixed
+
+- **Bookmark export structure**: subfolders are now grouped by domain suffix (e.g. all `.local` domains in a "local" folder, all `.internal` domains in an "internal" folder) instead of creating one folder per individual domain. Inside each suffix folder the bookmarks are a flat list — title = full domain, URL = `https://` + full domain. Suffix folders are sorted alphabetically.
+- `data-i18n-placeholder` attribute support in `applyTranslations()` for translated input placeholders

@@ -21,6 +21,9 @@ A minimal, self-hosted web UI for managing a Caddyfile. No authentication — de
 - **Self-hostname awareness**: marks its own Caddyfile entry and warns before you change it; redirects you automatically after save
 - **Root CA download**: download Caddy's local CA certificate to install on client devices
 - **Multilingual**: English, Dutch, German (add more by dropping a JSON file)
+- **Search & filter**: live search by domain, dropdown filter by type — all client-side, instant
+- **Sortable columns**: click Domain or Type header to sort ascending/descending
+- **Service count**: "X of Y services" counter updates as you filter
 - **Dark / Light mode**: CSS-variable theming, persisted in `localStorage`
 - **Multi-arch Docker image**: `linux/amd64` + `linux/arm/v7` — based on `python:3.11-alpine` for a minimal footprint
 
@@ -110,11 +113,19 @@ When Caddy uses `local_certs`, it creates its own CA. To make browsers trust Cad
 
 ## Multi-arch build
 
+The production image is published to the GitHub Container Registry:
+
+```
+ghcr.io/bananenbaas/caddy-supersimple-gui:latest
+```
+
+`docker compose up -d` pulls it automatically. To build and push a new image yourself:
+
 ```bash
 docker buildx create --use
 docker buildx build \
   --platform linux/amd64,linux/arm/v7 \
-  -t yourrepo/caddy-gui:latest \
+  -t ghcr.io/bananenbaas/caddy-supersimple-gui:latest \
   --push .
 ```
 

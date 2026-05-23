@@ -157,6 +157,41 @@
 
     .btn-sm { padding: 5px 11px; font-size: .78rem; }
 
+    /* ── Filter / sort bar ─────────────────────────────────────────────────── */
+    .card-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+    .filter-group { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .search-wrap { position: relative; }
+    .search-wrap .search-icon {
+      position: absolute; left: 9px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted); pointer-events: none;
+    }
+    #filter-search { padding-left: 32px; width: 210px; }
+    .filter-type-select { min-width: 130px; width: auto; }
+    .count-label {
+      font-size: .8rem; color: var(--text-muted); white-space: nowrap; padding: 4px 0;
+    }
+
+    /* Sortable column headers */
+    .table th.sortable {
+      cursor: pointer; user-select: none;
+      transition: background var(--transition), color var(--transition);
+    }
+    .table th.sortable:hover { background: var(--surface-3); color: var(--text); }
+    .sort-icon {
+      display: inline-block; margin-left: 5px;
+      font-size: .72rem; opacity: .3;
+      transition: opacity var(--transition);
+    }
+    .table th.sort-active { color: var(--primary); }
+    .table th.sort-active .sort-icon { opacity: 1; color: var(--primary); }
+
     /* ── Main layout ───────────────────────────────────────────────────────── */
     .main { max-width: 1100px; margin: 0 auto; padding: 28px 20px 60px; }
 
@@ -361,6 +396,28 @@
       line-height: 1.5;
     }
 
+    /* ── TLS indicator ─────────────────────────────────────────────────────── */
+    .tls-indicator {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 8px;
+      padding: 8px 12px;
+      background: color-mix(in srgb, var(--success) 8%, transparent);
+      border: 1px solid color-mix(in srgb, var(--success) 28%, transparent);
+      border-radius: var(--radius-sm);
+      font-size: .82rem;
+      color: var(--text);
+    }
+    .tls-indicator svg { color: var(--success); flex-shrink: 0; }
+    .tls-auto-tag {
+      margin-left: auto;
+      padding: 1px 8px;
+      background: color-mix(in srgb, var(--success) 15%, transparent);
+      color: var(--success);
+      border-radius: 20px;
+      font-size: .7rem; font-weight: 600;
+      text-transform: uppercase; letter-spacing: .05em;
+    }
+
     /* ── Toast ─────────────────────────────────────────────────────────────── */
     .toast {
       position: fixed;
@@ -424,6 +481,7 @@
       .table td:nth-child(3) { display: none; }
       .header { padding: 0 14px; }
       .toast { right: 12px; left: 12px; max-width: none; }
+      #filter-search { width: 140px; }
     }
     @media (max-width: 480px) {
       .table th:nth-child(2),
@@ -473,6 +531,10 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span data-i18n="download_cert">Download Root CA</span>
       </button>
+      <button class="btn btn-secondary" id="btn-export-bookmarks">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+        <span data-i18n="export_bookmarks">Export Bookmarks</span>
+      </button>
       <button class="btn btn-success" id="btn-add-service">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
         <span data-i18n="add_service">Add Service</span>
@@ -481,11 +543,26 @@
   </div>
 
   <div class="card">
+    <div class="card-toolbar">
+      <div class="filter-group">
+        <div class="search-wrap">
+          <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="search" id="filter-search" class="form-control" data-i18n-placeholder="filter_search_placeholder" placeholder="Search by domain…" autocomplete="off" spellcheck="false" />
+        </div>
+        <select id="filter-type" class="form-control filter-type-select">
+          <option value=""            data-i18n="filter_type_all">All types</option>
+          <option value="proxy"       data-i18n="type_proxy">Proxy</option>
+          <option value="https_proxy" data-i18n="type_https_proxy">HTTPS Proxy</option>
+          <option value="redirect"    data-i18n="type_redirect">Redirect</option>
+        </select>
+      </div>
+      <span id="service-count" class="count-label"></span>
+    </div>
     <table class="table" id="services-table">
       <thead>
         <tr>
-          <th data-i18n="domain">Domain</th>
-          <th data-i18n="type">Type</th>
+          <th class="sortable" data-sort="domain"><span data-i18n="domain">Domain</span><span class="sort-icon">↕</span></th>
+          <th class="sortable" data-sort="type"><span data-i18n="type">Type</span><span class="sort-icon">↕</span></th>
           <th data-i18n="backend">Backend / Target</th>
           <th data-i18n="actions">Actions</th>
         </tr>
@@ -494,7 +571,7 @@
     </table>
     <div id="empty-state" class="empty-state hidden">
       <div class="empty-state-icon">🌐</div>
-      <p data-i18n="no_services">No services configured yet.</p>
+      <p id="empty-state-msg" data-i18n="no_services">No services configured yet.</p>
     </div>
   </div>
 
@@ -536,6 +613,11 @@
         <input type="text" id="field-backend" class="form-control" autocomplete="off" spellcheck="false" />
         <span class="field-hint" id="backend-hint"></span>
         <span class="field-error" id="backend-error"></span>
+        <div id="tls-indicator" class="tls-indicator hidden">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+          <span data-i18n="tls_skip_verify_label">TLS Skip Verify (tls_insecure_skip_verify)</span>
+          <span class="tls-auto-tag" data-i18n="tls_auto_applied">auto</span>
+        </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -583,12 +665,16 @@ const state = {
   pendingDelete: null,
 };
 
+const filter = { search: '', type: '', sortCol: null, sortDir: 'asc' };
+
 // ── i18n ───────────────────────────────────────────────────────────────────
 let TR = {};
 const SUPPORTED_LANGS = ['en', 'nl', 'de'];
 
-function t(key) {
-  return TR[key] !== undefined ? TR[key] : key;
+function t(key, ...args) {
+  let text = TR[key] !== undefined ? TR[key] : key;
+  args.forEach((arg, i) => { text = text.replace(new RegExp(`\\{${i}\\}`, 'g'), String(arg)); });
+  return text;
 }
 
 async function loadLang(lang) {
@@ -621,6 +707,9 @@ function applyTranslations() {
   });
   document.querySelectorAll('[data-i18n-title]').forEach(el => {
     el.title = t(el.getAttribute('data-i18n-title'));
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
   });
   // Re-render table to pick up translated badges etc.
   renderServices();
@@ -662,6 +751,44 @@ function esc(str) {
 }
 function escAttr(str) { return esc(str); }
 
+// ── Filter / sort helpers ──────────────────────────────────────────────────
+function getFilteredSorted() {
+  let list = [...state.services];
+  if (filter.search) {
+    const q = filter.search.toLowerCase();
+    list = list.filter(s => s.domain.toLowerCase().includes(q));
+  }
+  if (filter.type) {
+    list = list.filter(s => s.type === filter.type);
+  }
+  if (filter.sortCol) {
+    const col = filter.sortCol;
+    list.sort((a, b) => {
+      const av = (a[col] || '').toLowerCase();
+      const bv = (b[col] || '').toLowerCase();
+      const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+      return filter.sortDir === 'asc' ? cmp : -cmp;
+    });
+  }
+  return list;
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll('th[data-sort]').forEach(th => {
+    const col    = th.getAttribute('data-sort');
+    const icon   = th.querySelector('.sort-icon');
+    const active = filter.sortCol === col;
+    th.classList.toggle('sort-active', active);
+    if (icon) icon.textContent = !active ? '↕' : filter.sortDir === 'asc' ? '↑' : '↓';
+  });
+}
+
+function updateCount() {
+  const el = document.getElementById('service-count');
+  if (!el) return;
+  el.textContent = t('filter_count', getFilteredSorted().length, state.services.length);
+}
+
 // ── Render ─────────────────────────────────────────────────────────────────
 function badgeClass(type) {
   return { proxy: 'badge-proxy', https_proxy: 'badge-https-proxy', redirect: 'badge-redirect' }[type] || 'badge-proxy';
@@ -672,14 +799,21 @@ function renderServices() {
   const empty  = document.getElementById('empty-state');
   if (!tbody) return;
 
-  if (state.services.length === 0) {
+  updateSortHeaders();
+  updateCount();
+
+  const list = getFilteredSorted();
+
+  if (list.length === 0) {
     tbody.innerHTML = '';
     empty.classList.remove('hidden');
+    const msg = document.getElementById('empty-state-msg');
+    if (msg) msg.textContent = state.services.length === 0 ? t('no_services') : t('no_results');
     return;
   }
   empty.classList.add('hidden');
 
-  tbody.innerHTML = state.services.map(svc => {
+  tbody.innerHTML = list.map(svc => {
     const isSelf = state.selfHostname && svc.domain === state.selfHostname;
     const selfChip = isSelf
       ? `<span class="self-chip" title="${esc(t('self_badge_tooltip'))}">★ ${esc(t('self_badge'))}</span>`
@@ -728,6 +862,22 @@ async function loadServices() {
 function showModal(id)  { document.getElementById(id).classList.remove('hidden'); document.body.style.overflow='hidden'; }
 function hideModal(id)  { document.getElementById(id).classList.add('hidden');    document.body.style.overflow=''; }
 
+function adaptBackendForType(val, newType) {
+  val = val.trim();
+  if (!val) return val;
+  let bare = val;
+  if (bare.startsWith('https://')) bare = bare.slice(8);
+  else if (bare.startsWith('http://')) bare = bare.slice(7);
+  switch (newType) {
+    case 'proxy':       return bare;
+    case 'https_proxy': return 'https://' + bare;
+    case 'redirect':
+      if (val.startsWith('http://') || val.startsWith('https://')) return val;
+      return 'http://' + bare;
+    default: return val;
+  }
+}
+
 function updateBackendHint() {
   const type  = document.getElementById('field-type')?.value || 'proxy';
   const label = document.getElementById('backend-label');
@@ -740,6 +890,8 @@ function updateBackendHint() {
   if (label) label.textContent = t(labels[type] || 'backend');
   hint.textContent = t(hints[type] || '');
   if (input) input.placeholder = t(phs[type] || '');
+  const tls = document.getElementById('tls-indicator');
+  if (tls) tls.classList.toggle('hidden', type !== 'https_proxy');
 }
 
 function clearErrors() {
@@ -905,6 +1057,51 @@ function startRedirectCountdown(newDomain) {
   tick();
 }
 
+// ── Bookmark export ────────────────────────────────────────────────────────
+function exportBookmarks() {
+  const ts = Math.floor(Date.now() / 1000);
+
+  // Group services by their domain suffix (last label after the final dot)
+  const groups = {};
+  for (const svc of state.services) {
+    const parts = svc.domain.split('.');
+    const suffix = parts[parts.length - 1];
+    if (!groups[suffix]) groups[suffix] = [];
+    groups[suffix].push(svc);
+  }
+
+  const lines = [
+    '<!DOCTYPE NETSCAPE-Bookmark-file-1>',
+    '<!-- This is an automatically generated file. -->',
+    '<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">',
+    '<TITLE>Bookmarks</TITLE>',
+    '<H1>Bookmarks</H1>',
+    '<DL><p>',
+    `    <DT><H3 ADD_DATE="${ts}" LAST_MODIFIED="${ts}">Caddy Services</H3>`,
+    '    <DL><p>',
+  ];
+
+  for (const suffix of Object.keys(groups).sort()) {
+    lines.push(`        <DT><H3 ADD_DATE="${ts}">${esc(suffix)}</H3>`);
+    lines.push('        <DL><p>');
+    for (const svc of groups[suffix]) {
+      const url = `https://${svc.domain}`;
+      lines.push(`            <DT><A HREF="${escAttr(url)}" ADD_DATE="${ts}">${esc(svc.domain)}</A>`);
+    }
+    lines.push('        </DL><p>');
+  }
+
+  lines.push('    </DL><p>', '</DL><p>');
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/html; charset=utf-8' });
+  const blobUrl = URL.createObjectURL(blob);
+  const a = Object.assign(document.createElement('a'), { href: blobUrl, download: 'caddy-bookmarks.html' });
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
+}
+
 // ── CA cert download ───────────────────────────────────────────────────────
 async function downloadCert() {
   try {
@@ -961,6 +1158,7 @@ async function init() {
   // Wire up controls
   document.getElementById('btn-add-service').addEventListener('click', openAddModal);
   document.getElementById('btn-download-cert').addEventListener('click', downloadCert);
+  document.getElementById('btn-export-bookmarks').addEventListener('click', exportBookmarks);
 
   document.getElementById('theme-toggle').addEventListener('click', () => {
     const cur = document.documentElement.getAttribute('data-theme');
@@ -972,7 +1170,11 @@ async function init() {
   document.getElementById('modal-close').addEventListener('click',  closeServiceModal);
   document.getElementById('modal-cancel').addEventListener('click', closeServiceModal);
   document.getElementById('modal-save').addEventListener('click',   saveService);
-  document.getElementById('field-type').addEventListener('change',  updateBackendHint);
+  document.getElementById('field-type').addEventListener('change', e => {
+    const backendField = document.getElementById('field-backend');
+    if (backendField) backendField.value = adaptBackendForType(backendField.value, e.target.value);
+    updateBackendHint();
+  });
 
   // Save on Enter in text inputs
   ['field-domain', 'field-backend'].forEach(id => {
@@ -994,6 +1196,28 @@ async function init() {
     state.pendingDelete = null;
   });
   document.getElementById('confirm-ok').addEventListener('click', confirmDelete);
+
+  // Filter and sort
+  document.getElementById('filter-search').addEventListener('input', e => {
+    filter.search = e.target.value;
+    renderServices();
+  });
+  document.getElementById('filter-type').addEventListener('change', e => {
+    filter.type = e.target.value;
+    renderServices();
+  });
+  document.querySelector('#services-table thead').addEventListener('click', e => {
+    const th = e.target.closest('th[data-sort]');
+    if (!th) return;
+    const col = th.getAttribute('data-sort');
+    if (filter.sortCol === col) {
+      filter.sortDir = filter.sortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      filter.sortCol = col;
+      filter.sortDir = 'asc';
+    }
+    renderServices();
+  });
 
   // Keyboard: Escape closes modals
   document.addEventListener('keydown', e => {
