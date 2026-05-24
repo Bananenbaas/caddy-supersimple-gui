@@ -25,7 +25,7 @@ A minimal, self-hosted web UI for managing a Caddyfile. No authentication — de
 - **Sortable columns**: click Domain or Type header to sort ascending/descending
 - **Service count**: "X of Y services" counter updates as you filter
 - **Dark / Light mode**: CSS-variable theming, persisted in `localStorage`
-- **Multi-arch Docker image**: `linux/amd64` + `linux/arm/v7` — based on `python:3.11-alpine` for a minimal footprint
+- **Multi-arch Docker image**: `linux/amd64` + `linux/arm/v7` — based on `python:3.14-alpine` for a minimal footprint
 
 ---
 

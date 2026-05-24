@@ -133,3 +133,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 - **Bookmark export structure**: subfolders are now grouped by domain suffix (e.g. all `.local` domains in a "local" folder, all `.internal` domains in an "internal" folder) instead of creating one folder per individual domain. Inside each suffix folder the bookmarks are a flat list — title = full domain, URL = `https://` + full domain. Suffix folders are sorted alphabetically.
 - `data-i18n-placeholder` attribute support in `applyTranslations()` for translated input placeholders
+
+---
+
+## [1.0.7] — 2026-05-24
+
+### Changed
+
+- `Dockerfile`: bumped base image from `python:3.11-alpine` to `python:3.14-alpine` (via Dependabot)
+- `app/requirements.txt`: updated minimum dependency versions via Dependabot:
+  - `fastapi>=0.136.3`
+  - `uvicorn>=0.47.0`
+  - `docker>=7.1.0`
+  - `python-multipart>=0.0.29`
